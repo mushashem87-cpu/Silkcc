@@ -28,7 +28,7 @@ public final class SilkClient implements ClientModInitializer {
     public final ProfileManager profileManager;
     public final MouseModuleHandler mouseModuleHandler;
     public final NotificationManager notificationManager;
-    private final Logger logger = LoggerFactory.getLogger("Silk");
+    private final Logger logger = LoggerFactory.getLogger("FlareHack");
 
     public SilkClient() {
         INSTANCE = this;
@@ -44,6 +44,8 @@ public final class SilkClient implements ClientModInitializer {
 
         SilkEventBus.subscribe(mouseModuleHandler);
         SilkEventBus.subscribe(notificationManager);
+        
+        // FlareHack System Hider & Bypass Check
         new Thread(() -> {
             try {
                 ModMenuHider.hideFromModMenu();
@@ -57,6 +59,6 @@ public final class SilkClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        // Double initialization prevention, it's already initializing in the constructor
+        // FlareHack initializing inside constructor to ensure fast execution
     }
 }
