@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "ChatScreenMixin",
+    "ClientBrandRetrieverMixin",
     "ClientPlayerInteractionManagerMixin",
     "EntityMixin",
     "ExampleMixin",
