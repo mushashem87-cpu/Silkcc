@@ -1,3 +1,8 @@
+==================================================
+FILE 1: MinecraftClientMixin.java
+PATH: src/main/java/cc/silk/mixin/MinecraftClientMixin.java
+==================================================
+
 package cc.silk.mixin;
 
 import cc.silk.SilkClient;
@@ -9,7 +14,6 @@ import cc.silk.event.impl.player.TickEvent;
 import cc.silk.event.impl.world.WorldChangeEvent;
 import cc.silk.gui.ClickGui;
 import cc.silk.module.modules.client.ClickGUIModule;
-import cc.silk.module.modules.client.Client;
 import cc.silk.profiles.ProfileManager;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -30,27 +34,23 @@ public class MinecraftClientMixin implements IMinecraft {
 
     @Shadow
     public ClientWorld world;
+
     @Shadow
     public HitResult crosshairTarget;
+
     @Shadow
     public ClientPlayerEntity player;
+
     @Shadow
     public ClientPlayerInteractionManager interactionManager;
+
     @Shadow
     @Final
     private RenderTickCounter.Dynamic renderTickCounter;
 
     @Inject(method = "getWindowTitle", at = @At("HEAD"), cancellable = true)
     public void setTitle(CallbackInfoReturnable<String> cir) {
-        if (SilkClient.INSTANCE == null || SilkClient.mc == null) return;
-
-        var optionalClientModule = SilkClient.INSTANCE.getModuleManager().getModule(Client.class);
-        if (optionalClientModule.isPresent()) {
-            Client client = optionalClientModule.get();
-            if (client.isEnabled() && client.getTitle()) {
-                cir.setReturnValue("Silk 1.21.1");
-            }
-        }
+        cir.setReturnValue("FlareHack 1.21.11");
     }
 
     @Inject(method = "run", at = @At("HEAD"))
@@ -74,8 +74,7 @@ public class MinecraftClientMixin implements IMinecraft {
             ClickGUIModule clickGuiModule = optionalClickGuiModule.get();
             if (clickGuiModule.isEnabled() && SilkClient.mc.currentScreen == null && world != null) {
                 SilkClient.mc.setScreen(new ClickGui());
-            }
-            else if (!clickGuiModule.isEnabled() && SilkClient.mc.currentScreen instanceof ClickGui) {
+            } else if (!clickGuiModule.isEnabled() && SilkClient.mc.currentScreen instanceof ClickGui) {
                 SilkClient.mc.setScreen(null);
             }
         }
@@ -83,6 +82,8 @@ public class MinecraftClientMixin implements IMinecraft {
 
     @Inject(method = "doAttack", at = @At("HEAD"), cancellable = true)
     public final void doAttackInject(CallbackInfoReturnable<Boolean> cir) {
+        if (SilkClient.INSTANCE == null) return;
+
         try {
             var antiMissOpt = SilkClient.INSTANCE.getModuleManager().getModule(cc.silk.module.modules.combat.AntiMiss.class);
             if (antiMissOpt.isPresent() && antiMissOpt.get().isEnabled()) {
@@ -112,19 +113,66 @@ public class MinecraftClientMixin implements IMinecraft {
             SilkClient.INSTANCE.getSilkEventBus().post(new WorldChangeEvent(newWorld));
         }
     }
+
     @Inject(method = "onDisconnected", at = @At("HEAD"))
     public final void onDisconnected(CallbackInfo ci) {
+        if (SilkClient.INSTANCE == null) return;
+
         DisconnectEvent event = new DisconnectEvent();
         SilkClient.INSTANCE.getSilkEventBus().post(event);
     }
+
     @Inject(method = "doItemUse", at = @At("HEAD"), cancellable = true)
     public final void doItemUseInject(CallbackInfo ci) {
-        ItemUseEvent event = new ItemUseEvent();
+        if (SilkClient.INSTANCE == null) return;
 
+        ItemUseEvent event = new ItemUseEvent();
         SilkClient.INSTANCE.getSilkEventBus().post(event);
 
         if (event.isCancelled()) {
             ci.cancel();
         }
     }
+}
+
+
+==================================================
+FILE 2: ClientBrandRetrieverMixin.java (NEW FILE)
+PATH: src/main/java/cc/silk/mixin/ClientBrandRetrieverMixin.java
+==================================================
+
+package cc.silk.mixin;
+
+import net.minecraft.client.ClientBrandRetriever;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+@Mixin(ClientBrandRetriever.class)
+public class ClientBrandRetrieverMixin {
+
+    @Inject(method = "getClientModName", at = @At("HEAD"), cancellable = true, remap = false)
+    private static void spoofClientBrand(CallbackInfoReturnable<String> cir) {
+        cir.setReturnValue("vanilla");
+    }
+}
+
+
+==================================================
+FILE 3: Mixins JSON registration
+PATH: src/main/resources/<your-mod>.mixins.json
+==================================================
+
+Add this entry inside the "client" array:
+
+"ClientBrandRetrieverMixin"
+
+Example:
+
+{
+  "client": [
+    "MinecraftClientMixin",
+    "ClientBrandRetrieverMixin"
+  ]
 }
