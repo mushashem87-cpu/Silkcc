@@ -175,4 +175,14 @@ Example:
     "MinecraftClientMixin",
     "ClientBrandRetrieverMixin"
   ]
+    @Inject(method = "render", at = @At("HEAD"))
+    private void onRenderInject(boolean tick, CallbackInfo ci) {
+        if (SilkClient.INSTANCE == null || SilkClient.mc == null || world == null || player == null) return;
+        
+        var clickAimModule = SilkClient.INSTANCE.getModuleManager().getModule(cc.silk.module.modules.combat.ClickAimAssist.class);
+        if (clickAimModule.isPresent() && clickAimModule.get().isEnabled()) {
+            clickAimModule.get().onFrame();
+        }
+    }
+
 }
